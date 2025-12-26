@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Binary Tree Left View</title>
+
+<style>
+body {
+  background: linear-gradient(135deg, #141e30, #243b55);
+  font-family: Arial, sans-serif;
+  color: white;
+  text-align: center;
+  margin: 0;
+}
+
+h1 { margin-top: 15px; }
+
+.definition {
+  font-size: 15px;
+  margin: 10px auto;
+  width: 85%;
+  opacity: 0.9;
+}
+
+.controls { margin: 20px; }
+
+input {
+  padding: 8px;
+  width: 140px;
+  border-radius: 6px;
+  border: none;
+  outline: none;
+}
+
+button {
+  padding: 9px 18px;
+  margin-left: 8px;
+  border: none;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #ff512f, #dd2476);
+  color: white;
+  cursor: pointer;
+}
+
+button:hover { transform: scale(1.05); }
+
+#tree-container {
+  position: relative;
+  width: 100%;
+  height: 420px;
+  overflow-x: auto;
+}
+
+.node {
+  position: absolute;
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #ffcc00, #ff9800);
+  color: black;
+  font-weight: bold;
+  line-height: 55px;
+  transition: 0.6s;
+}
+
+.node.active {
+  background: linear-gradient(145deg, #4caf50, #8bc34a);
+  transform: scale(1.2);
+}
+
+svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+#order {
+  display: flex;
+  justify-content: center;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.order-node {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #00c6ff;
+  line-height: 40px;
+  margin: 5px 10px;
+  position: relative;
+  font-weight: bold;
+}
+
+.order-node::after {
+  content: "➜";
+  position: absolute;
+  right: -16px;
+}
+
+.order-node:last-child::after { content: ""; }
+
+#complexity {
+  margin-top: 15px;
+  font-size: 15px;
+  opacity: 0.9;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🌳 Binary Tree – Left View</h1>
+
+<div class="definition">
+<b>Left View:</b> The first node visible at every level when the tree is viewed from the left side.
+</div>
+
+<div class="controls">
+  <input type="text" id="value" placeholder="Enter value">
+  <button onclick="insertNode()">Insert</button>
+  <button onclick="deleteNode()">Delete</button>
+  <button onclick="showLeftView()">Left View</button>
+</div>
+
+<div id="tree-container">
+  <svg id="lines" width="2000" height="420"></svg>
+</div>
+
+<h3 id="travName"></h3>
+<div id="order"></div>
+<p id="complexity"></p>
+
+<script>
+let nodes = [];
+
+/* INSERT NODE */
+function insertNode() {
+  const val = document.getElementById("value").value.trim();
+  if (!val) return;
+
+  nodes.push(val);
+  document.getElementById("value").value = "";
+  drawTree();
+}
+
+/* DELETE NODE */
+function deleteNode() {
+  const val = document.getElementById("value").value.trim();
+  if (!val) return;
+
+  const index = nodes.indexOf(val);
+  if (index === -1) {
+    alert("Node not found");
+    return;
+  }
+
+  nodes[index] = nodes[nodes.length - 1];
+  nodes.pop();
+  document.getElementById("value").value = "";
+  drawTree();
+}
+
+/* DRAW TREE */
+function drawTree() {
+  const container = document.getElementById("tree-container");
+  const svg = document.getElementById("lines");
+
+  container.querySelectorAll(".node").forEach(n => n.remove());
+  svg.innerHTML = "";
+
+  let positions = {};
+  const width = Math.max(1200, nodes.length * 140);
+  svg.setAttribute("width", width);
+
+  nodes.forEach((val, i) => {
+    const level = Math.floor(Math.log2(i + 1));
+    const index = i - (2 ** level - 1);
+
+    const gap = width / (2 ** (level + 1));
+    const x = gap + index * gap * 2 - 27;
+    const y = level * 80 + 40;
+
+    positions[i] = { x, y };
+
+    const node = document.createElement("div");
+    node.className = "node";
+    node.id = "node" + i;
+    node.style.left = x + "px";
+    node.style.top = y + "px";
+    node.innerText = val;
+    container.appendChild(node);
+
+    if (i !== 0) {
+      const parent = Math.floor((i - 1) / 2);
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", positions[parent].x + 27);
+      line.setAttribute("y1", positions[parent].y + 27);
+      line.setAttribute("x2", x + 27);
+      line.setAttribute("y2", y + 27);
+      line.setAttribute("stroke", "white");
+      svg.appendChild(line);
+    }
+  });
+}
+
+/* LEFT VIEW */
+function showLeftView() {
+  resetView();
+  document.getElementById("travName").innerText = "Left View Traversal";
+
+  let firstNodeAtLevel = {};
+  nodes.forEach((_, i) => {
+    const level = Math.floor(Math.log2(i + 1));
+    if (!(level in firstNodeAtLevel)) {
+      firstNodeAtLevel[level] = i;
+    }
+  });
+
+  let delay = 0;
+  Object.values(firstNodeAtLevel).forEach(i => {
+    setTimeout(() => {
+      const node = document.getElementById("node" + i);
+      node.classList.add("active");
+
+      const out = document.createElement("div");
+      out.className = "order-node";
+      out.innerText = node.innerText;
+      document.getElementById("order").appendChild(out);
+    }, delay);
+
+    delay += 900;
+  });
+
+  /* TIME COMPLEXITY */
+  document.getElementById("complexity").innerHTML =
+    `<b>Time Complexity:</b> O(n)<br>
+     <b>Where:</b> n = number of nodes entered (${nodes.length})`;
+}
+
+/* RESET */
+function resetView() {
+  document.querySelectorAll(".node").forEach(n => n.classList.remove("active"));
+  document.getElementById("order").innerHTML = "";
+  document.getElementById("complexity").innerHTML = "";
+}
+</script>
+
+</body>
+</html>
